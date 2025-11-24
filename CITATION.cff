@@ -1,0 +1,52 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: 'MUCH : A Multilingual Claim Hallucination Benchmark'
+message: >-
+  If you use this dataset, please cite it using the metadata
+  from this file.
+type: dataset
+authors:
+  - given-names: Jérémie
+    family-names: Dentan
+    orcid: 'https://orcid.org/0009-0001-5561-8030'
+  - given-names: Alexi
+    family-names: Canesse
+    orcid: 'https://orcid.org/0009-0005-1494-4736'
+  - given-names: Davide
+    family-names: Buscaldi
+    orcid: 'https://orcid.org/0000-0003-1112-3789'
+  - given-names: Aymen
+    family-names: Shabou
+    orcid: 'https://orcid.org/0000-0001-8933-7053'
+  - given-names: Sonia
+    family-names: Vanier
+    orcid: 'https://orcid.org/0000-0001-6390-8882'
+identifiers:
+  - type: url
+    value: 'https://arxiv.org/abs/2511.17081'
+repository-code: 'https://github.com/orailix/much'
+repository-artifact: 'https://huggingface.co/datasets/orailix/MUCH'
+abstract: >-
+  Claim-level Uncertainty Quantification (UQ) is a promising
+  approach to mitigate the lack of reliability in Large
+  Language Models (LLMs). We introduce MUCH, the first
+  claim-level UQ benchmark designed for fair and
+  reproducible evaluation of future methods under realistic
+  conditions. It includes 4,873 samples across four European
+  languages (English, French, Spanish, and German) and four
+  instruction-tuned open-weight LLMs. Unlike prior
+  claim-level benchmarks, we release 24 generation logits
+  per token, facilitating the development of future
+  white-box methods without re-generating data. Moreover, in
+  contrast to previous benchmarks that rely on manual or
+  LLM-based segmentation, we propose a new deterministic
+  algorithm capable of segmenting claims using as little as
+  0.2% of the LLM generation time. This makes our
+  segmentation approach suitable for real-time monitoring of
+  LLM outputs, ensuring that MUCH evaluates UQ methods under
+  realistic deployment constraints. Finally, our evaluations
+  show that current methods still have substantial room for
+  improvement in both performance and efficiency.
+license: Apache-2.0

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["much_segmenter"]
+package-dir = {"" = "src"}
+
+[project]
+name = "much-segmenter"
+version = "0.2.1"
+license = { text = "Apache-2.0" }
+authors = [
+    { name="Jérémie Dentan"},
+    { name="Alexi Canesse"},
+]
+maintainers = [
+    { name="Jérémie Dentan"},
+    { name="Alexi Canesse"},
+]
+description = "MUCH: A light text claim segmenter for hallucination detection."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "transformers>=4.47",
+    "nltk>=3.9.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/orailix/much_segmenter"
+Issues = "https://github.com/orailix/much_segmenter/issues"

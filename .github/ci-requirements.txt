@@ -1,0 +1,4 @@
+# Lib `transformers` is also required, but it has special test in the CI workflow
+pytest
+numpy
+nltk
