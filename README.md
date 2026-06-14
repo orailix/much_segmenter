@@ -87,6 +87,8 @@ This work received financial support from the research chair *Trustworthy and Re
 
 This work was granted access to the HPC resources of IDRIS under the allocation **AD011014843R1**, made by GENCI.
 
+We thank Mahammed El Sharkawy for his contribution to this work.
+
 ## Copyright and License
 
 Copyright 2025–present Laboratoire d’Informatique de l’École Polytechnique.
