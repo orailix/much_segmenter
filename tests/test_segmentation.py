@@ -4,10 +4,17 @@ import pytest
 from src.much_segmenter import much_segmentation
 from src.much_segmenter.utils import (
     get_known_eos_or_eot,
+    get_punctuation_set,
     get_tokenizer,
     get_tokens_and_spans,
 )
-from tests.data import expected_outputs, non_idempotent_segmentations, test_phrases
+from tests.data import (
+    PUNCT_BEFORE_EOS_PHRASES,
+    edge_case_segmentations,
+    expected_outputs,
+    non_idempotent_segmentations,
+    test_phrases,
+)
 
 
 @pytest.mark.parametrize("model_name", list(expected_outputs.keys()))
@@ -112,3 +119,61 @@ def test_eos_eot_in_its_own_claim(model_name):
         assert len(segmentation[-1]) == 1
 
     assert model_name == "bert-base-uncased" or count_test > 0
+
+
+@pytest.mark.parametrize("model_name", list(expected_outputs.keys()))
+def test_no_terminal_punct_isolation(model_name):
+
+    tokenizer = get_tokenizer(model_name)
+    punct_set = get_punctuation_set()
+    tokens_all = tokenizer.encode
+
+    for phrase in test_phrases:
+        segmentation = much_segmentation(phrase, tokenizer)
+        encoded = tokenizer.encode(phrase, add_special_tokens=False)
+
+        last_is_eos = len(segmentation[-1]) == 1 and encoded[
+            segmentation[-1][0]
+        ] in get_known_eos_or_eot(tokenizer)
+        if last_is_eos:
+            continue
+
+        chunk_tokens = [encoded[i] for i in segmentation[-1]]
+        chunk_text = tokenizer.decode(chunk_tokens).strip()
+        assert chunk_text not in punct_set, (
+            f"Terminal punctuation isolated in its own chunk for model "
+            f"'{model_name}' on phrase '{phrase}': last content chunk decodes to '{chunk_text}'"
+        )
+
+
+@pytest.mark.parametrize("model_name,phrase,expected", edge_case_segmentations)
+def test_edge_case_segmentation(model_name, phrase, expected):
+    tokenizer = get_tokenizer(model_name)
+    out = much_segmentation(phrase, tokenizer)
+    assert out == expected, (
+        f"Edge-case mismatch for model '{model_name}' on phrase {phrase!r}: "
+        f"got {out}, expected {expected}"
+    )
+
+
+@pytest.mark.parametrize("phrase,model_name", PUNCT_BEFORE_EOS_PHRASES)
+def test_punct_before_eos_not_merged(phrase, model_name):
+    from src.much_segmenter.utils import get_punctuation_set
+
+    tokenizer = get_tokenizer(model_name)
+    encoded = tokenizer.encode(phrase, add_special_tokens=False)
+    seg = much_segmentation(phrase, tokenizer)
+
+    assert (
+        len(seg) >= 3
+    ), f"Expected at least 3 chunks for '{model_name}' on {phrase!r}, got {seg}"
+
+    assert len(seg[-1]) == 1 and encoded[seg[-1][0]] in get_known_eos_or_eot(
+        tokenizer
+    ), f"Last chunk is not a lone EOS token for '{model_name}' on {phrase!r}"
+
+    pre_eos_text = tokenizer.decode([encoded[i] for i in seg[-2]]).strip()
+    assert pre_eos_text in get_punctuation_set(), (
+        f"Expected punctuation chunk before EOS for '{model_name}' on {phrase!r}, "
+        f"got {pre_eos_text!r}"
+    )

@@ -136,8 +136,70 @@ expected_outputs = {
 		[[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10], [11, 12, 13, 14, 15, 16, 17], [18, 19, 20, 21, 22, 23, 24]],
 		[[0, 1, 2, 3, 4, 5], [6, 7, 8, 9, 10, 11, 12]],
 		[[0, 1, 2], [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], [14, 15, 16, 17, 18, 19, 20]],
-		[[0, 1, 2], [3, 4, 5, 6, 7, 8, 9], [10, 11, 12, 13, 14, 15], [16, 17, 18], [19, 20, 21, 22], [23, 24, 25], [26, 27], [28, 29, 30], [31, 32, 33, 34, 35, 36, 37]],    ]
-    }
+		[[0, 1, 2], [3, 4, 5, 6, 7, 8, 9], [10, 11, 12, 13, 14, 15], [16, 17, 18], [19, 20, 21, 22], [23, 24, 25], [26, 27], [28, 29, 30], [31, 32, 33, 34, 35, 36, 37]],
+    ]
+}
+
+# the EOS token in the phrase is recognised by that model :
+# the punctuation chunk immediately before the EOS must remain isolated.
+PUNCT_BEFORE_EOS_PHRASES = [
+    ("The Eiffel Tower was built in 1889?\n</s>",          "mistralai/Ministral-8B-Instruct-2410"),
+    ("The Eiffel Tower was built in 1889?\n<|eot_id|>",    "meta-llama/Llama-3.2-3B-Instruct"),
+    ("The Eiffel Tower was built in 1889?\n<|eot_id|>",    "meta-llama/Llama-3.1-8B-Instruct"),
+    ("The Eiffel Tower was built in 1889?\n<end_of_turn>", "google/gemma-3-4b-it"),
+]
+
+
+#
+# Three categories:
+#   No EOS token, short phrase : eos_index == len(generation), single chunk
+#   No EOS token + space : post-processing merges isolated terminal "."
+#   Punct immediately before a recognised EOS : last_is_eos guard keeps it isolated
+edge_case_segmentations = [
+    # Category 1
+    ("mistralai/Ministral-8B-Instruct-2410", "Unknown.", [[0, 1]]),
+    ("meta-llama/Llama-3.2-3B-Instruct",     "Unknown.", [[0, 1]]),
+    ("meta-llama/Llama-3.1-8B-Instruct",     "Unknown.", [[0, 1]]),
+    ("google/gemma-3-4b-it",                  "Unknown.", [[0, 1]]),
+    ("bert-base-uncased",                     "Unknown.", [[0, 1]]),
+    # Category 2
+    ("mistralai/Ministral-8B-Instruct-2410", "Unknown. ", [[0, 1, 2]]),
+    ("meta-llama/Llama-3.2-3B-Instruct",     "Unknown. ", [[0, 1, 2]]),
+    ("meta-llama/Llama-3.1-8B-Instruct",     "Unknown. ", [[0, 1, 2]]),
+    ("google/gemma-3-4b-it",                  "Unknown. ", [[0, 1, 2]]),
+    ("bert-base-uncased",                     "Unknown. ", [[0, 1]]),
+    # Category 3
+    ("mistralai/Ministral-8B-Instruct-2410", "The Eiffel Tower was built in 1889?\n</s>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9, 10, 11, 12], [13], [14]]),
+    ("meta-llama/Llama-3.2-3B-Instruct",     "The Eiffel Tower was built in 1889?\n</s>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9, 10], [11, 12, 13, 14]]),
+    ("meta-llama/Llama-3.1-8B-Instruct",     "The Eiffel Tower was built in 1889?\n</s>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9, 10], [11, 12, 13, 14]]),
+    ("google/gemma-3-4b-it",                  "The Eiffel Tower was built in 1889?\n</s>",
+        [[0, 1, 2], [3, 4], [5, 6, 7, 8, 9, 10], [11, 12, 13]]),
+    ("bert-base-uncased",                     "The Eiffel Tower was built in 1889?\n</s>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8], [9, 10, 11, 12, 13]]),
+    ("mistralai/Ministral-8B-Instruct-2410", "The Eiffel Tower was built in 1889?\n<|eot_id|>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9, 10, 11, 12], [13, 14, 15, 16, 17, 18, 19, 20]]),
+    ("meta-llama/Llama-3.2-3B-Instruct",     "The Eiffel Tower was built in 1889?\n<|eot_id|>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9, 10], [11], [12]]),
+    ("meta-llama/Llama-3.1-8B-Instruct",     "The Eiffel Tower was built in 1889?\n<|eot_id|>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9, 10], [11], [12]]),
+    ("google/gemma-3-4b-it",                  "The Eiffel Tower was built in 1889?\n<|eot_id|>",
+        [[0, 1, 2], [3, 4], [5, 6, 7, 8, 9, 10], [11, 12, 13, 14, 15, 16, 17, 18, 19]]),
+    ("bert-base-uncased",                     "The Eiffel Tower was built in 1889?\n<|eot_id|>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8], [9, 10, 11, 12, 13, 14, 15, 16, 17]]),
+    ("mistralai/Ministral-8B-Instruct-2410", "The Eiffel Tower was built in 1889?\n<end_of_turn>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9, 10, 11, 12], [13, 14, 15, 16, 17, 18, 19]]),
+    ("meta-llama/Llama-3.2-3B-Instruct",     "The Eiffel Tower was built in 1889?\n<end_of_turn>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9, 10], [11, 12, 13, 14, 15, 16]]),
+    ("meta-llama/Llama-3.1-8B-Instruct",     "The Eiffel Tower was built in 1889?\n<end_of_turn>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9, 10], [11, 12, 13, 14, 15, 16]]),
+    ("google/gemma-3-4b-it",                  "The Eiffel Tower was built in 1889?\n<end_of_turn>",
+        [[0, 1, 2], [3, 4], [5, 6, 7, 8, 9, 10], [11, 12], [13]]),
+    ("bert-base-uncased",                     "The Eiffel Tower was built in 1889?\n<end_of_turn>",
+        [[0, 1, 2, 3, 4], [5, 6], [7, 8], [9, 10, 11, 12, 13, 14, 15, 16]]),
+]
 
 non_idempotent_segmentations = [
     (

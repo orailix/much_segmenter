@@ -53,7 +53,7 @@ def much_segmentation(
     segmentation_punct_set = get_punctuation_set()
 
     # NLTK tokenization + stopwords detection
-    word_indices = nltk_tokenizer.span_tokenize(generation)
+    word_indices = list(nltk_tokenizer.span_tokenize(generation))
 
     # Init containers for loop
     char_idx_of_claim_start = []
@@ -61,11 +61,12 @@ def much_segmentation(
     next_word_is_stopword = False
 
     # Index of EOS
+    eos_index = None
     for final_token in get_known_eos_or_eot(llm_tokenizer):
         if llm_tokenizer.decode(final_token) in generation:
             eos_index = generation.index(llm_tokenizer.decode(final_token))
             break
-    else:
+    if eos_index is None:
         eos_index = len(generation)
 
     # Iterating over NLTK words - the goal here is to fill char_idx_of_claim_start
@@ -73,7 +74,8 @@ def much_segmentation(
     for word_start, word_stop in word_indices:
         # Did we reach EOS ?
         if word_stop >= eos_index:
-            char_idx_of_claim_start.append(eos_index)
+            if eos_index < len(generation):
+                char_idx_of_claim_start.append(eos_index)
             break
 
         # Is current word a stopword?
@@ -83,7 +85,6 @@ def much_segmentation(
             or (current_word in segmentation_punct_set)
             or next_word_is_stopword
         )
-
         # We only add it if the previous word was not a stopword
         if word_is_stopword and (not previous_word_was_stopword) and (word_start != 0):
             char_idx_of_claim_start.append(word_start)
@@ -93,8 +94,8 @@ def much_segmentation(
         previous_word_was_stopword = word_is_stopword
         next_word_is_stopword = current_word[-1] == "."
 
-    # Adding the latest part to terminate chunks
-    if char_idx_of_claim_start[-1] != len(generation):
+    # Adding the last part to terminate chunks.
+    if not char_idx_of_claim_start or char_idx_of_claim_start[-1] != len(generation):
         char_idx_of_claim_start.append(len(generation))
 
     # Now, we iterate on the LLM tokens and detect when we "cross" a char in char_idx_of_claim_start
@@ -124,5 +125,19 @@ def much_segmentation(
     # Final flush
     if current_chunk != []:
         result.append(current_chunk)
+
+    # Post-processing
+    # If the last token is punctuation, include it in the final chunk.
+    if len(result) >= 2:
+        last_is_eos = len(result[-1]) == 1 and output_tokens[
+            result[-1][0]
+        ] in get_known_eos_or_eot(llm_tokenizer)
+        if not last_is_eos:
+            chunk_text = llm_tokenizer.decode(
+                [output_tokens[i] for i in result[-1]]
+            ).strip()
+            if chunk_text in segmentation_punct_set:
+                result[-2] = result[-2] + result[-1]
+                result.pop()
 
     return result
