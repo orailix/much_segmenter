@@ -74,6 +74,13 @@ This package is released alongside the MUCH benchmark. This benchmark includes t
   - Generation configs: [orailix/MUCH-configs](https://huggingface.co/datasets/orailix/MUCH-configs)
   - Baseline evaluation data: [orailix/MUCH-signals](https://huggingface.co/datasets/orailix/MUCH-signals)
 
+## Changelog
+
+- v0.3.0 Handles two edge case:
+  - Avoids raising an error when there are no nltk-tokenizable content in the input.
+  - When there are no EOS token and the last char is a punctuation mark, it is merged into the latest claim.
+- v0.2.1 First public version. This version was used to generate MUCH [arXiv:2511.17081](https://arxiv.org/abs/2511.17081)
+
 ## Acknowledgement
 
 This work received financial support from the research chair *Trustworthy and Responsible AI* at École Polytechnique.
